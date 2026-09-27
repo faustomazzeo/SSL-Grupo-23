@@ -2,14 +2,15 @@
 using namespace std;
 
 int funcion2(char numero){
-    int numeroCaracter = numero; // C++ trabaja con los caracteres usando codigo ASCII, por lo que numeroCaracter es el valor en la tabla ASCII del caracter numerico ingresado
-    if (!(numero>=48 && numero<=57)){
+    // verificamos que el caracter sea un dígito entre '0' y '9'
+    if (numero < '0' || numero > '9'){
         cout << "\n <ERROR> El caracter ingresado no es numerico. \n" << endl;
-        return -1; // Nos aseguramos de que el caracter ingresado sea realmente un caracter numerico, devolviendo error en caso contrario
+        return -1; // retornamos -1 en caso de que el caracter ingresado no sea numerico
     }
 
-    numeroCaracter -= 48; // Sabiendo que el caracter '0' es el numero 48 en ASCII, simplemente calculamos la diferencia y retornamos dicho valor
-    return numeroCaracter;
+    // C++ hace automáticamente la conversión entre caracteres y sus valores ASCII, por lo que no es necesario usar directamente los valores numericos de ASCII
+    // Sabiendo que el caracter '0' es el numero 48 en ASCII, calculamos la diferencia y retornamos dicho valor.
+    return numero - '0';
 }
 
 // int main(){

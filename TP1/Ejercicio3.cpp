@@ -144,7 +144,7 @@ int main(){
     cout << "Ingrese una cuenta: " << endl;
 	fscanf(stdin, "%99s", cadena);
 
-    while (!huboError && i!=5) {
+    while (!huboError && i != ESTADOTERMINADO) {
         char caracter = cadena[offset]; // obtenemos el caracter de la cadena
         j = transicion(caracter); // nos fijamos a que columna pertenece para despues hacer la transicion al proximo estado
         int ii = tabla[i][j]; // obtenemos el proximo estado segun la tabla, el estado en el que estamos y el caracter que se registro
