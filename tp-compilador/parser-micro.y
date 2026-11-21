@@ -23,20 +23,35 @@ void generar(const char *instruccion,
 char *copiar(const char *texto);
 char *gen_infijo(const char *a, const char *b, int operador);
 
+
+/* Errores */
+#define MAX_ERR_LEN 512
+
+void reemplazar_palabra(char *buffer, const char *buscar, const char *reemplazo);
+
 %}
 
-%error-verbose
+%define parse.error verbose
 
 %union {
     char *str;
 }
 
-%token <str> ID CONSTANTE
-%token INICIO FIN LEER ESCRIBIR
-%token PARENIZQ PARENDER
-%token PUNTOCOMA COMA
-%token ASIGNACION SUMA RESTA
+%token <str> ID "identificador"
+%token <str> CONSTANTE "constante"
+%token INICIO "inicio"
+%token FIN "fin"
+%token LEER "leer"
+%token ESCRIBIR "escribir"
+%token PARENIZQ "("
+%token PARENDER ")"
+%token PUNTOCOMA ";"
+%token COMA ","
+%token ASIGNACION ":="
+%token SUMA "+"
+%token RESTA "-"
 %token ERRORLEXICO
+%token FIN_ARCHIVO 0 "fin de archivo"
 
 %type <str> expresion primaria
 
@@ -165,10 +180,45 @@ primaria:
 void yyerror(const char *mensaje)
 {
     if (!error_lexico_detectado) {
-        printf("ERROR SINTACTICO - Linea %d: %s\n",
-               yylineno, mensaje);
+        char mi_buffer[MAX_ERR_LEN];
+
+        strncpy(mi_buffer, mensaje, MAX_ERR_LEN - 1);
+        mi_buffer[MAX_ERR_LEN - 1] = '\0';
+
+        reemplazar_palabra(mi_buffer, "syntax error,", "");
+        reemplazar_palabra(mi_buffer, "unexpected", "no se esperaba");
+        reemplazar_palabra(mi_buffer, "expecting", "se esperaba");
+        reemplazar_palabra(mi_buffer, " or ", " o ");
+
+        fprintf(stderr, "ERROR SINTACTICO - LINEA %d : %s\n", yylineno, mi_buffer);
     }
 }
+
+
+
+/* Funcion auxiliar errores */
+
+void reemplazar_palabra(char *buffer, const char *fragmento_buscado, const char *reemplazo) {
+    char temp[MAX_ERR_LEN];
+    char *pos;
+    int len_buscar = strlen(fragmento_buscado);
+    int len_reemplazo = strlen(reemplazo);
+
+    while ((pos = strstr(buffer, fragmento_buscado)) != NULL) {
+        if (strlen(buffer) - len_buscar + len_reemplazo >= MAX_ERR_LEN) {
+            break;
+        }
+        int prefijo_len = pos - buffer;
+        strncpy(temp, buffer, prefijo_len);
+        temp[prefijo_len] = '\0';
+
+        strcat(temp, reemplazo);
+        strcat(temp, pos + len_buscar);
+
+        strcpy(buffer, temp);
+    }
+}
+
 
 /* Busca un identificador en la tabla */
 
@@ -191,7 +241,7 @@ void chequear(const char *nombre)
     if (!buscar(nombre)) {
 
         if (cantidad_simbolos >= MAX_SIMBOLOS) {
-            printf("ERROR SEMANTICO - Linea %d: "
+            printf("ERROR SEMANTICO - Linea %d : "
                    "tabla de simbolos llena.\n", yylineno);
 
             error_semantico_detectado = 1;
