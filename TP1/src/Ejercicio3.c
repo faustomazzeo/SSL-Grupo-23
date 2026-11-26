@@ -1,8 +1,6 @@
 #include <stdio.h>
-#include <iostream>
-#include "Ejercicio2.cpp"
-#include <stack>
-using namespace std;
+#include <stdbool.h>
+#include "Ejercicio2.h"
 
 
 typedef enum {
@@ -41,6 +39,52 @@ typedef struct {
     int prioridad;
 } Termino;
 
+
+
+
+
+
+
+
+// Estructuras para la pila de terminos implementada
+
+#define MAX_PILA 100
+
+typedef struct {
+    Termino elementos[MAX_PILA];
+    int tope; // indice del ultimo elemento apilado, -1 si esta vacia
+} Pila;
+
+void pilaInicializar(Pila *p){
+    p->tope = -1;
+}
+
+bool estaVaciaPila(Pila *p){
+    return p->tope == -1;
+}
+
+void pilaPush(Pila *p, Termino t){
+    p->tope++;
+    p->elementos[p->tope] = t;
+}
+
+Termino pilaPop(Pila *p){
+    Termino t = p->elementos[p->tope];
+    p->tope--;
+    return t;
+}
+
+Termino pilaTop(Pila *p){
+    return p->elementos[p->tope];
+}
+
+
+
+
+
+
+
+
 bool esDigito(char c){
 	return (c >= '0' && c <= '9');
 }
@@ -76,19 +120,19 @@ int elevadoA(int exponente, int base){
     return (base * elevadoA(exponente-1, base));
 }
 
-int obtenerNumero(char cadena[], int& offset){ //int offsetInicial = offset; // necesario para la segunda pasada de lectura de la cadena
+int obtenerNumero(char cadena[], int *offset){ //int offsetInicial = *offset; // necesario para la segunda pasada de lectura de la cadena
     int len = 0; // tamanio del numero
     int numero = 0; // entero que representa la cadena del numero
     int signo = 0; // 0 es positivo, 1 es negativo (solo es relevante en caso de que la cadena arranque con "-30..." o "+20...")
-    if (offset == 0 && esSumaResta(cadena[offset])){
-        if (cadena[offset] == '-') signo = 1;
-        offset++; // adelantamos el offset para ir directo al numero
+    if (*offset == 0 && esSumaResta(cadena[*offset])){
+        if (cadena[*offset] == '-') signo = 1;
+        (*offset)++; // adelantamos el offset para ir directo al numero
     }
-    int offsetInicial = offset; // necesario para la segunda lectura de la cadena
-    while (esDigito(cadena[offset])){ // va a leer el tamanio del numero (importante para las unidades) y va a ir adelantando el offset
+    int offsetInicial = *offset; // necesario para la segunda lectura de la cadena
+    while (esDigito(cadena[*offset])){ // va a leer el tamanio del numero (importante para las unidades) y va a ir adelantando el offset
         // (importante para el while principal)
         len++;
-        offset++;
+        (*offset)++;
     }
     while (len>0){
         int digitoConUnidad = funcion2(cadena[offsetInicial]) * (elevadoA(len-1,10)); // la funcion2 pasa de caracter a numero entero,
@@ -107,7 +151,7 @@ int obtenerOperador(char op){
     if (op == '-') return OPERADORRESTA;
     if (op == '*') return OPERADORMULTIPLICACION;
     if (op == '\0') return OPERADORFIN;
-    cout << "\n Error Validacion operador \n"; return -1; // no deberia pasar nunca si la cadena ya fue validada por el automata
+    printf("\n Error Validacion operador \n"); return -1; // no deberia pasar nunca si la cadena ya fue validada por el automata
 }
 
 int obtenerPrioridad(int op){
@@ -141,7 +185,7 @@ int main(){
         {5, 5, 5, 5, 5}
     };
 
-    cout << "Ingrese una cuenta: " << endl;
+    printf("Ingrese una cuenta: \n");
 	fscanf(stdin, "%99s", cadena);
 
     while (!huboError && i != ESTADOTERMINADO) {
@@ -157,34 +201,34 @@ int main(){
         i = ii;
     }
 
-    cout << endl << "Cadena analizada: " << cadena;
+    printf("\nCadena analizada: %s", cadena);
     if (huboError) {
-        cout << "    - con error/es. Cadena Invalida" << endl;
+        printf("    - con error/es. Cadena Invalida\n");
         return -1;
     } else {
-        cout << "    - sin errores. Cadena Valida" << endl;
+        printf("    - sin errores. Cadena Valida\n");
     }
 
 
     offset = 0;
     Termino terminoActual;
     bool obtuveResultado = false;
-    stack<Termino> pila;
+    Pila pila;
+    pilaInicializar(&pila);
     while (!obtuveResultado){
-        terminoActual.numero = obtenerNumero(cadena, offset); // esta funcion devuelve el numero entero y dentro manipula el offset
+        terminoActual.numero = obtenerNumero(cadena, &offset); // esta funcion devuelve el numero entero y dentro manipula el offset
         terminoActual.operador = obtenerOperador(cadena[offset]); // obtenemos el operador asociado actual
         terminoActual.prioridad = obtenerPrioridad(terminoActual.operador); // determinamos la prioridad del termino/operacion
 
-        while(!pila.empty() && pila.top().prioridad<=terminoActual.prioridad) { // mientras la pila no este vacia y el termino que este
+        while(!estaVaciaPila(&pila) && pilaTop(&pila).prioridad<=terminoActual.prioridad) { // mientras la pila no este vacia y el termino que este
             // arriba de todo de la pila tenga prioridad mayor o igual que el termino actual
-            Termino temp = pila.top(); // toma el termino apilado que tiene mayor prioridad
-            pila.pop();
+            Termino temp = pilaPop(&pila); // toma el termino apilado que tiene mayor prioridad
             int resultadoTemporal = operar(temp.numero, terminoActual.numero, temp.operador); // opera el numero apilado con el numero
             // del termino actual usando la operacion del termino apilado
             terminoActual.numero = resultadoTemporal; // registra el resultado en el termino actual
         }
 
-        pila.push(terminoActual);
+        pilaPush(&pila, terminoActual);
 
         obtuveResultado = (terminoActual.operador == OPERADORFIN);  // si no tiene operador asociado (el "operador es '\0'"), quiere
         // decir que se llego al final de la cadena y ademas el bucle interior termino de resolver todas las cuentas
@@ -192,7 +236,7 @@ int main(){
         offset++;
     }
 
-    cout << "Resultado: " << pila.top().numero << endl;
+    printf("Resultado: %d\n", pilaTop(&pila).numero);
 
     return 0;
 }
